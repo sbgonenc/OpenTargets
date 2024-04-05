@@ -1,0 +1,28 @@
+## Molecule example
+
+{"id":"CHEMBL1089641","canonicalSmiles":"Cc1cc(-c2ccc(/N=N/c3c(S(=O)(=O)O)cc4cc(
+S(=O)(=O)O)cc(N)c4c3O)c(C)c2)ccc1/N=N/c1c(S(=O)(=O)O)cc2cc(S(=O)(=O)O)cc(N)c2c1O
+","inchiKey":"ZBNARPCCDMHDDV-HVMBLDELSA-N","drugType":"Small molecule","blackBox
+Warning":false,"name":"TRYPAN BLUE","yearOfFirstApproval":2004,"maximumClinicalT
+rialPhase":4.0,"hasBeenWithdrawn":false,"isApproved":true,"tradeNames":[],"synon
+yms":["Trypan blue"],"crossReferences":{"DailyMed":["trypan%20blue"],"PubChem":[
+"50112808"],"drugbank":["DB09158"],"chEBI":["78900"]},"childChemblIds":["CHEMBL1
+640"],"description":"Small molecule drug with a maximum clinical trial phase of 
+IV that was first approved in 2004."}
+
+
+## Mechanism of Action
+
+{"actionType":"POSITIVE ALLOSTERIC MODULATOR","mechanismOfAction":"GABA receptor alpha-3 subunit positive allosteric modulator","chemblIds":["CHEMBL1783256"],"targetName":"GABA receptor alpha-3 subunit","targetType":"single protein","targets":["ENSG00000011677"],"references":[{"source":"PubMed","ids":["25493397","25493397"],"urls":["http://europepmc.org/abstract/MED/25493397","http://europepmc.org/abstract/MED/25493397"]}]}
+
+## Targets
+
+{"id":"ENSG00000020219","approvedSymbol":"CCT8L1P","biotype":"processed_pseudogene","transcriptIds":["ENST00000465400"],"canonicalTranscript":{"id":"ENST00000465400","chromosome":"7","start":152445477,"end":152447150,"strand":"+"},"canonicalExons":["152445477","152447150"],"genomicLocation":{"chromosome":"7","start":152445477,"end":152447150,"strand":1},"approvedName":"chaperonin containing TCP1 subunit 8 like 1, pseudogene","synonyms":[{"label":"Putative T-complex protein 1 subunit theta-like 1","source":"uniprot"},{"label":"CCT8L1P","source":"uniprot"},{"label":"CCT8L1","source":"uniprot"},{"label":"CCT8L1","source":"NCBI_entrez"},{"label":"chaperonin containing TCP1, subunit 8 (theta)-like 1, pseudogene","source":"NCBI_entrez"},{"label":"CCT8L1P","source":"NCBI_entrez"}],"symbolSynonyms":[{"label":"CCT8L1P","source":"uniprot"},{"label":"CCT8L1","source":"uniprot"},{"label":"CCT8L1","source":"NCBI_entrez"},{"label":"CCT8L1P","source":"NCBI_entrez"}],"nameSynonyms":[{"label":"Putative T-complex protein 1 subunit theta-like 1","source":"uniprot"},{"label":"chaperonin containing TCP1, subunit 8 (theta)-like 1, pseudogene","source":"NCBI_entrez"}],"functionDescriptions":["Possible molecular chaperone; assists the folding of proteins upon ATP hydrolysis. ."],"subcellularLocations":[{"location":"Cytoplasm","source":"uniprot","termSL":"SL-0086","labelSL":"Cellular component"}],"obsoleteSymbols":[{"label":"CCT8L1","source":"HGNC"}],"obsoleteNames":[{"label":"chaperonin containing TCP1, subunit 8 (theta)-like 1","source":"HGNC"},{"label":"chaperonin containing TCP1, subunit 8 (theta)-like 1, pseudogene","source":"HGNC"}],"proteinIds":[{"id":"A6NM43","source":"uniprot_obsolete"}],"dbXrefs":[{"id":"32153","source":"HGNC"},{"id":"IPR017998","source":"InterPro"},{"id":"IPR002423","source":"InterPro"},{"id":"IPR027409","source":"InterPro"},{"id":"IPR027413","source":"InterPro"},{"id":"IPR027410","source":"InterPro"}]}
+
+## Subcellular Locations
+
+[{'location': 'Nucleus', 'source': 'uniprot', 'termSL': 'SL-0191', 'labelSL': 'Cellular component'}, {'location': 'Chromosome', 'source': 'uniprot', 'termSL': 'SL-0468', 'labelSL': 'Cellular component'}, {'location': 'Cytoplasm', 'source': 'uniprot', 'termSL': 'SL-0086', 'labelSL': 'Cellular component'}, {'location': 'Nucleoli', 'source': 'HPA_main', 'termSL': 'SL-0188', 'labelSL': 'Nucleolus'}, {'location': 'Cytosol', 'source': 'HPA_additional', 'termSL': 'SL-0091', 'labelSL': 'Cytosol'}]
+
+tractabilities
+	tractability
+[{'modality': 'SM', 'id': 'Approved Drug', 'value': False}, {'modality': 'SM', 'id': 'Advanced Clinical', 'value': False}, {'modality': 'SM', 'id': 'Phase 1 Clinical', 'value': False}, {'modality': 'SM', 'id': 'Structure with Ligand', 'value': False}, {'modality': 'SM', 'id': 'High-Quality Ligand', 'value': False}, {'modality': 'SM', 'id': 'High-Quality Pocket', 'value': False}, {'modality': 'SM', 'id': 'Med-Quality Pocket', 'value': False}, {'modality': 'SM', 'id': 'Druggable Family', 'value': False}, {'modality': 'AB', 'id': 'Approved Drug', 'value': False}, {'modality': 'AB', 'id': 'Advanced Clinical', 'value': False}, {'modality': 'AB', 'id': 'Phase 1 Clinical', 'value': False}, {'modality': 'AB', 'id': 'UniProt loc high conf', 'value': False}, {'modality': 'AB', 'id': 'GO CC high conf', 'value': True}, {'modality': 'AB', 'id': 'UniProt loc med conf', 'value': True}, {'modality': 'AB', 'id': 'UniProt SigP or TMHMM', 'value': True}, {'modality': 'AB', 'id': 'GO CC med conf', 'value': False}, {'modality': 'AB', 'id': 'Human Protein Atlas loc', 'value': False}, {'modality': 'PR', 'id': 'Approved Drug', 'value': False}, {'modality': 'PR', 'id': 'Advanced Clinical', 'value': False}, {'modality': 'PR', 'id': 'Phase 1 Clinical', 'value': False}, {'modality': 'PR', 'id': 'Literature', 'value': False}, {'modality': 'PR', 'id': 'UniProt Ubiquitination', 'value': False}, {'modality': 'PR', 'id': 'Database Ubiquitination', 'value': True}, {'modality': 'PR', 'id': 'Half-life Data', 'value': False}, {'modality': 'PR', 'id': 'Small Molecule Binder', 'value': False}, {'modality': 'OC', 'id': 'Approved Drug', 'value': False}, {'modality': 'OC', 'id': 'Advanced Clinical', 'value': False}, {'modality': 'OC', 'id': 'Phase 1 Clinical', 'value': False}]
