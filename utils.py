@@ -1,5 +1,36 @@
 import pandas as pd
 import ast
+import os
+
+
+def call_subprocess(command: str, params: list, outfile=None, chdir=None):
+    import subprocess
+    # When we want to pipe the result to a text file, then we have to use the outfile option.
+    # If the program asks you to specify the output with -o etc. then leave the outfile param None
+    if outfile:
+        stdout_buffer = open(outfile, "wb", buffering=0)
+    else:
+        stdout_buffer = subprocess.PIPE
+
+    popen_args = dict(
+        args=[command] + params,
+        preexec_fn=os.setsid,
+        stdin=subprocess.DEVNULL,
+        stdout=stdout_buffer,
+        stderr=subprocess.PIPE,
+        bufsize=0,
+        cwd=chdir,
+    )
+    process = subprocess.Popen(**popen_args)
+    stdout, stderr = process.communicate()
+
+    return_code = process.returncode
+
+    if return_code != 0:
+        full_command = " ".join(popen_args['args'])
+        raise Exception(full_command, stdout, stderr)
+    retstdout = stdout.decode() if stdout is not None else None
+    return return_code, retstdout
 
 
 def convert_json2pandas(jsonfile: str, output_file: str = None) -> pd.DataFrame:
@@ -33,7 +64,3 @@ def convert_to_list(string):
 ## Get location values
 def get_loc_values(x:dict):
     return x.get("location", None), x.get("labelSL", None)
-
-# convert_json2pandas("/home/berk/Projects/OpenTargets/data/combined_moa.json", "moa.tsv")
-# convert_json2pandas("/home/berk/Projects/OpenTargets/data/combined_molecule.json", "molecules.tsv")
-# convert_json2pandas("/home/berk/Projects/OpenTargets/data/combined_targets.json", "targets.tsv")
