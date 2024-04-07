@@ -46,7 +46,7 @@ class DataPreprocess:
         df_targets_naless = df_targets.dropna(subset=['subcellularLocations'])
 
         ## keep useful columns
-        columns_to_keep = ["id", "biotype", "alternativeGenes", "subcellularLocations"]
+        columns_to_keep = ["id", "biotype", "subcellularLocations"]
         df_targets = df_targets_naless[columns_to_keep]
         ## handle the subcellularLocations
         # convert string to an array
@@ -57,7 +57,7 @@ class DataPreprocess:
         df_targets_exp_locs[["subcellular_location", "subcellular_location_label"]] = \
         df_targets_exp_locs["subcellularLocations"].apply(lambda x: pd.Series(get_loc_values(x)))
 
-        self.preprocessed_targets = df_targets_exp_locs
+        self.preprocessed_targets = df_targets_exp_locs.drop("subcellularLocations", axis=1)
         self.preprocessed_targets.to_csv(os.path.join(self.temp_dir, "preprocessed_targets.tsv"))
 
     def get_preprocess_moa(self):
@@ -72,15 +72,13 @@ class DataPreprocess:
 
     def get_preprocess_molecules(self):
         df_molecules = pd.read_csv(self.molecules_file, sep="\t")
-        df_molecules = df_molecules[["id", "drugType", "childChemblIds", "parentId", "linkedTargets.rows"]]
+        df_molecules = df_molecules[["id", "drugType", "childChemblIds", "parentId"]]
 
         ##since some values are encoded literal strings while transforming from json to pandas,
         # needed to convert string to arrays (lists)
         df_molecules["childChemblIds"].apply(lambda x: convert_to_list(x), inplace=True)
-        df_molecules["linkedTargets.rows"].apply(lambda x: convert_to_list(x), inplace=True)
 
-        df_molecules_expChild = df_molecules.explode("childChemblIds")
-        self.preprocessed_molecules = df_molecules_expChild.explode("linkedTargets.rows")
+        self.preprocessed_molecules = df_molecules.explode("childChemblIds")
 
         self.preprocessed_molecules.to_csv(os.path.join(self.temp_dir, "preprocessed_molecules.tsv"), sep="\t", index=False)
 
