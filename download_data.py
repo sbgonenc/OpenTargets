@@ -12,23 +12,22 @@ class DownloadPrepareInitialData:
     def __init__(self, mechanism_of_action_output=None, targets_output=None, molecules_output=None,  temp_dir=None):
 
         self.temp_dir = temp_dir if temp_dir is not None else tempfile.mkdtemp(prefix="download_OT")
-
-        print(self.temp_dir)
-
         self.moa_combined = mechanism_of_action_output if mechanism_of_action_output is not None else os.path.join(self.temp_dir, "moa_combined.json")
         self.targets_combined = targets_output if targets_output is not None else os.path.join(self.temp_dir, "targets_combined.json")
         self.molecules_combined = molecules_output if molecules_output is not None else os.path.join(self.temp_dir, "molecules_combined.json")
 
-    def process(self):
-        self.download_data("targets")
+    def process(self, download=True):
+        if download:
+            print(f"Downloading targets to {os.path.join(self.temp_dir, 'targets')}")
+            self.download_data("targets")
+            print(f"Downloading mechanismOfAction to {os.path.join(self.temp_dir, 'mechanismOfAction')}")
+            self.download_data("mechanismOfAction")
+            print(f"Downloading molecule to {os.path.join(self.temp_dir, 'molecule')}")
+            self.download_data("molecule")
+
         self.join_json_files(os.path.join(self.temp_dir, "targets"), self.targets_combined)
-
-        self.download_data("mechanismOfAction")
         self.join_json_files(os.path.join(self.temp_dir, "mechanismOfAction"), self.moa_combined)
-
-        self.download_data("molecule")
         self.join_json_files(os.path.join(self.temp_dir, "molecule"), self.molecules_combined)
-
 
     def download_data(self, data_name):
         """
@@ -51,8 +50,10 @@ class DownloadPrepareInitialData:
         """
         Joins all the json lines files in the input_folder into one file
         """
-        return_code, _ = call_subprocess("cat", [f"{input_folder}/*.json"], outfile=output_file)
+        with open(output_file, "w") as out_fh:
+            for file in os.listdir(input_folder):
+                if not file.endswith(".json"): continue
+                with open(os.path.join(input_folder, file), "r") as in_fh:
+                    out_fh.write("\n".join([line.strip() for line in in_fh]))
+                    out_fh.write("\n")
 
-        if return_code != 0:
-            raise Exception("Joining failed")
-        return 1
