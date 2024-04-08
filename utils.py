@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import ast
 import os
@@ -54,13 +55,16 @@ def convert_json2pandas(jsonfile: str, output_file: str = None) -> pd.DataFrame:
 
 
 def convert_to_list(string):
+    """
+    Convert literal string in dataframe to a format that can be evaluated
+    :param string:
+    :return:
+    """
+    if any([isinstance(string, list), isinstance(string, dict), string in [None, np.nan]]):
+        return string
     try:
         return ast.literal_eval(string)
     except (ValueError, SyntaxError) as e:
         print(f"Error at\n {string}")
         raise e
 
-
-## Get location values
-def get_loc_values(x:dict):
-    return x.get("location", None), x.get("labelSL", None)
