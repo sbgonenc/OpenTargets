@@ -7,27 +7,60 @@ import pandas as pd
 from utils import convert_to_list
 import tempfile
 import os
+import shutil
 
 
-class DataPreprocess:
+class DataProcess:
     """
     Takes in targets, moa and molecules json files,
     Preprocess and combine them into one table/tsv file
+
     """
 
-    def __init__(self, targets_file, mechanism_of_action_file, molecules_file,
-                 save_preprocess_data=False, temp_dir=None):
+    def __init__(self, targets_file=None, mechanism_of_action_file=None, molecules_file=None, combined_file=None,
+                 drug_modality="drugType", location_key="subcellular_location_label",
+                 save_preprocess_data=False, out_dir=None, temp_dir=None):
 
         self.targets_file = targets_file
         self.mechanism_of_action_file = mechanism_of_action_file
         self.molecules_file = molecules_file
         self.save_preprocess_data = save_preprocess_data
+        self.out_dir = out_dir
         self.temp_dir = temp_dir if temp_dir is not None else tempfile.mkdtemp(prefix="dataprocess_OT")
+        self.combined_file = combined_file
+
+        self.drug_modality_key = drug_modality
+        self.location_key = location_key
 
         self.preprocessed_moa:pd.DataFrame = None
         self.preprocessed_targets:pd.DataFrame = None
         self.preprocessed_molecules:pd.DataFrame = None
         self.combined_data:pd.DataFrame = None
+
+        self.contingency_table = None
+
+
+    def process(self):
+        ## Preprocess the data from json
+        ## to combine them into one table
+        if self.combined_file is None:
+            self.preprocess()
+        else:
+            self.combined_data = pd.read_csv(self.combined_file, sep="\t")
+
+        ## save preprocessed files to out_dir
+        if self.save_preprocess_data and self.out_dir is not None:
+            shutil.copy(self.temp_dir, self.out_dir)
+
+        ## remove temp_dir
+        shutil.rmtree(self.temp_dir)
+
+        ## Creates contingency table for further analysis
+        self.contingency_table = self._create_contingency_table(
+            self.combined_data, self.drug_modality_key, self.location_key
+                                                                )
+
+        self.analyse(self.drug_modality_key, self.location_key)
 
     def preprocess(self):
         self.get_preprocess_targets()
@@ -81,7 +114,16 @@ class DataPreprocess:
         del df_molecules
 
     def combine_data(self):
-        pass
+        self.preprocessed_moa.rename(columns={"chemblIds": "ChemblID", "targets": "EnsemblID"}, inplace=True)
+        self.preprocessed_molecules.rename(columns={"id": "ChemblID"}, inplace=True)
+        self.preprocessed_targets.rename(columns={"id": "EnsemblID"}, inplace=True)
+
+        ## Merge the datasets
+        df_drugmoa = pd.merge(self.preprocessed_moa, self.preprocessed_molecules, on="ChemblID")
+        self.combined_data = pd.merge(df_drugmoa, self.preprocessed_targets, on="EnsemblID")
+
+        self.combined_data.to_csv(os.path.join(self.temp_dir, "combined_data.tsv"), sep="\t", index=False)
+        del df_drugmoa
 
     @staticmethod
     def _read_json_data(json_file):
@@ -94,3 +136,79 @@ class DataPreprocess:
         location = x.get("location", None)
         if ":" in location: location = location.split(":")[1].strip()
         return location, x.get("labelSL", None)
+
+    @staticmethod
+    def _create_contingency_table(df, x, y):
+        return pd.crosstab(df[x], df[y])
+
+    def analyse(self, drug_modality_key, location_key):
+        """
+        Creates a __significance.tsv contains p-value and odds ratio for each drug modality and subcellular location
+        and a heatmap for the drug modality and subcellular location
+        This method calls test_significance and create_heatmap methods to analyse the data
+        drug_modality_key: drug_modality column_name to analyse
+        inference_key : subcellular location to analyse
+        :return:
+        """
+        significance_table = os.path.join(self.out_dir, f"{drug_modality_key}_{location_key}_significance.tsv")
+        with open(significance_table, "w") as fh:
+            fh.write("Drug Modality\tLocation\tP-value\tOdds Ratio\tSignificance\n")
+            for key in self.contingency_table.columns:
+                for loc in self.contingency_table.index:
+                    fisher_p_value, odds_ratio, significance = self.test_significance(key, loc)
+                    stats_string = f"{fisher_p_value}\t{odds_ratio}\t{significance}"
+                    fh.write(f"{key}\t{loc}\t{stats_string}\n")
+
+        self.create_heatmap(drug_modality_key, location_key)
+
+    def test_significance(self, column_name, row_name, significance=0.05):
+        """
+        This function tests the significance of the association between a specific drug type and a subcellular location using Fisher's exact test.
+
+        Args:
+          data: cross tab with rows indexed
+          column_name: column_name to analyze.
+          row_name: row_name location to analyze.
+
+        Returns:
+          A tuple containing the p-value and odds ratio from the Fisher's exact test.
+        """
+        from scipy.stats import fisher_exact, chi2_contingency
+
+        data = self.contingency_table
+        # Get contingency table for drug type vs location
+        contingency_table = [[0, 0], [0, 0]]
+        row_column = data[column_name][row_name]
+        not_row_all_column = data[column_name].sum() - row_column
+        all_row_not_column = data.loc[row_name].sum() - row_column
+        not_row_not_column = data.sum().sum() - not_row_all_column - all_row_not_column + row_column
+        contingency_table[0][0] = row_column  ## column+row sum
+        contingency_table[1][0] = all_row_not_column  ## row - column
+        contingency_table[0][1] = not_row_all_column
+        contingency_table[1][1] = not_row_not_column
+
+        # Perform Fisher's exact test
+        odds_ratio, fisher_p_value = fisher_exact(contingency_table)
+        #chi_stat, chi_p_value = chi2_contingency(contingency_table)
+        return fisher_p_value, odds_ratio, significance > fisher_p_value
+
+    def create_heatmap(self, x_name=None, log_transform=True):
+        import seaborn as sns
+        import numpy as np
+        import matplotlib.pyplot as plt
+
+        title = f"{x_name} distribution on subcellular locations"
+        contingency_table = self.contingency_table
+        if log_transform:
+            contingency_table = np.log2(self.contingency_table + 1)
+            title = f"{title} (Log Scale)"
+
+        # Create a heatmap using seaborn
+        sns.heatmap(contingency_table, annot=False, cmap="viridis")
+        plt.title(title)
+        plt.xlabel(x_name)
+        plt.ylabel("subcellular locations")
+
+        if self.save_preprocess_data:
+            plt.savefig(os.path.join(self.out_dir, f"{self.drug_modality_key}_{self.location_key}_heatmap.png"))
+        plt.show()

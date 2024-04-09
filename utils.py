@@ -68,3 +68,52 @@ def convert_to_list(string):
         print(f"Error at\n {string}")
         raise e
 
+
+# Function to calculate significance for a specific drug-location pair
+def test_significance(data, column_name, row_name):
+    """
+    This function tests the significance of the association between a specific drug type and a subcellular location using Fisher's exact test.
+
+    Args:
+      data: cross tab with rows indexed
+      column_name: column_name to analyze.
+      row_name: row_name location to analyze.
+
+    Returns:
+      A tuple containing the p-value and odds ratio from the Fisher's exact test.
+    """
+    from scipy.stats import fisher_exact
+
+    # Get contingency table for drug type vs location
+    contingency_table = [[0, 0], [0, 0]]
+    row_column = data[column_name][row_name]
+    not_row_all_column = data[column_name].sum() - row_column
+    all_row_not_column = data.loc[row_name].sum() - row_column
+    not_row_not_column = data.sum().sum() - not_row_all_column - all_row_not_column + row_column
+    contingency_table[0][0] = row_column ## column+row sum
+    contingency_table[1][0] = all_row_not_column ## row - column
+    contingency_table[0][1] = not_row_all_column
+    contingency_table[1][1] = not_row_not_column
+
+    # Perform Fisher's exact test
+    odds_ratio, p_value = fisher_exact(contingency_table)
+
+    return p_value, odds_ratio
+
+def create_heatmap(contingency_table, x_name=None, y_name=None, log_transform=True):
+    import seaborn as sns
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    title = f"{x_name} distribution on {y_name}"
+
+    if log_transform:
+        contingency_table = np.log2(contingency_table + 1)
+        title = f"{title} (Log Scale)"
+
+    # Create a heatmap using seaborn
+    sns.heatmap(contingency_table, annot=False, cmap="viridis")
+    plt.title(title)
+    plt.xlabel(x_name)
+    plt.ylabel(y_name)
+    plt.show()

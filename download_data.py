@@ -6,15 +6,17 @@ import tempfile
 
 class DownloadPrepareInitialData:
     """
-    Downloads the OpenTargets dataset and joins the json files
+    Downloads the OpenTargets dataset and joins the json files.
+    If the output files are not specified, it creates them in a temporary directory
+    If download is set to False, work_dir should be specified as the directory containing the downloaded directories
     """
 
-    def __init__(self, mechanism_of_action_output=None, targets_output=None, molecules_output=None,  temp_dir=None):
+    def __init__(self, mechanism_of_action_output=None, targets_output=None, molecules_output=None,  work_dir=None):
 
-        self.temp_dir = temp_dir if temp_dir is not None else tempfile.mkdtemp(prefix="download_OT")
-        self.moa_combined = mechanism_of_action_output if mechanism_of_action_output is not None else os.path.join(self.temp_dir, "moa_combined.json")
-        self.targets_combined = targets_output if targets_output is not None else os.path.join(self.temp_dir, "targets_combined.json")
-        self.molecules_combined = molecules_output if molecules_output is not None else os.path.join(self.temp_dir, "molecules_combined.json")
+        self.temp_dir = work_dir if work_dir is not None else tempfile.mkdtemp(prefix="download_OT")
+        self.moa_combined = mechanism_of_action_output if mechanism_of_action_output is not None else tempfile.mktemp(dir=self.temp_dir, suffix="moa_combined.json")
+        self.targets_combined = targets_output if targets_output is not None else tempfile.mktemp(dir=self.temp_dir, suffix="targets_combined.json")
+        self.molecules_combined = molecules_output if molecules_output is not None else tempfile.mktemp(dir=self.temp_dir, suffix="molecules_combined.json")
 
     def process(self, download=True):
         if download:
@@ -46,7 +48,8 @@ class DownloadPrepareInitialData:
         print(f"Downloaded {data_name}")
         return 1
 
-    def join_json_files(self, input_folder, output_file):
+    @staticmethod
+    def join_json_files(input_folder, output_file):
         """
         Joins all the json lines files in the input_folder into one file
         """
