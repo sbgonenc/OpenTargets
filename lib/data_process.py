@@ -18,19 +18,20 @@ class DataProcess:
     """
 
     def __init__(self, targets_file=None, mechanism_of_action_file=None, molecules_file=None, combined_file=None,
-                 drug_modality="drugType", location_key="subcellular_location_label",
+                 drug_modality="drugType", location_key="subcellular_location_label", show_only_significant=False,
                  save_preprocess_data=False, out_dir=None, temp_dir=None):
 
         self.targets_file = targets_file
         self.mechanism_of_action_file = mechanism_of_action_file
         self.molecules_file = molecules_file
         self.save_preprocess_data = save_preprocess_data
-        self.out_dir = out_dir
+        self.out_dir = out_dir if out_dir is not None else f"./{drug_modality}_analysis"
         self.temp_dir = temp_dir if temp_dir is not None else tempfile.mkdtemp(prefix="dataprocess_OT")
         self.combined_file = combined_file
 
         self.drug_modality_key = drug_modality
         self.location_key = location_key
+        self.show_only_significant = show_only_significant
 
         self.preprocessed_moa:pd.DataFrame = None
         self.preprocessed_targets:pd.DataFrame = None
@@ -49,18 +50,18 @@ class DataProcess:
             self.combined_data = pd.read_csv(self.combined_file, sep="\t")
 
         ## save preprocessed files to out_dir
-        if self.save_preprocess_data and self.out_dir is not None:
+        if not os.path.exists(self.out_dir):
+            os.makedirs(self.out_dir)
+
+        if self.save_preprocess_data:
             shutil.copy(self.temp_dir, self.out_dir)
 
         ## remove temp_dir
         shutil.rmtree(self.temp_dir)
 
         ## Creates contingency table for further analysis
-        self.contingency_table = self._create_contingency_table(
-            self.combined_data, self.drug_modality_key, self.location_key
-                                                                )
-
-        self.analyse(self.drug_modality_key, self.location_key)
+        self.contingency_table = pd.crosstab(self.combined_data[self.location_key], self.combined_data[self.drug_modality_key])
+        self.analyse()
 
     def preprocess(self):
         self.get_preprocess_targets()
@@ -141,7 +142,7 @@ class DataProcess:
     def _create_contingency_table(df, x, y):
         return pd.crosstab(df[x], df[y])
 
-    def analyse(self, drug_modality_key, location_key):
+    def analyse(self):
         """
         Creates a __significance.tsv contains p-value and odds ratio for each drug modality and subcellular location
         and a heatmap for the drug modality and subcellular location
@@ -150,16 +151,19 @@ class DataProcess:
         inference_key : subcellular location to analyse
         :return:
         """
-        significance_table = os.path.join(self.out_dir, f"{drug_modality_key}_{location_key}_significance.tsv")
-        with open(significance_table, "w") as fh:
+        significance_table = ...
+        significance_file = os.path.join(self.out_dir, f"{self.drug_modality_key}_{self.location_key}_significance.tsv")
+        with open(significance_file, "w") as fh:
             fh.write("Drug Modality\tLocation\tP-value\tOdds Ratio\tSignificance\n")
             for key in self.contingency_table.columns:
                 for loc in self.contingency_table.index:
                     fisher_p_value, odds_ratio, significance = self.test_significance(key, loc)
+                    if self.show_only_significant and not significance: continue
                     stats_string = f"{fisher_p_value}\t{odds_ratio}\t{significance}"
                     fh.write(f"{key}\t{loc}\t{stats_string}\n")
 
-        self.create_heatmap(drug_modality_key, location_key)
+        self.create_heatmap()
+        self.create_stacked_bar_distributions()
 
     def test_significance(self, column_name, row_name, significance=0.05):
         """
@@ -192,12 +196,12 @@ class DataProcess:
         #chi_stat, chi_p_value = chi2_contingency(contingency_table)
         return fisher_p_value, odds_ratio, significance > fisher_p_value
 
-    def create_heatmap(self, x_name=None, log_transform=True):
+    def create_heatmap(self, log_transform=True):
         import seaborn as sns
         import numpy as np
         import matplotlib.pyplot as plt
 
-        title = f"{x_name} distribution on subcellular locations"
+        title = f"{self.drug_modality_key} distribution on subcellular locations"
         contingency_table = self.contingency_table
         if log_transform:
             contingency_table = np.log2(self.contingency_table + 1)
@@ -206,9 +210,32 @@ class DataProcess:
         # Create a heatmap using seaborn
         sns.heatmap(contingency_table, annot=False, cmap="viridis")
         plt.title(title)
-        plt.xlabel(x_name)
+        plt.xlabel(self.drug_modality_key)
         plt.ylabel("subcellular locations")
+        plt.xticks(rotation=45, ha="right")
 
-        if self.save_preprocess_data:
-            plt.savefig(os.path.join(self.out_dir, f"{self.drug_modality_key}_{self.location_key}_heatmap.png"))
+        plt.savefig(
+            os.path.join(self.out_dir, f"{self.drug_modality_key}_{self.location_key}_heatmap.pdf"),
+            format="pdf", bbox_inches="tight"
+        )
         plt.show()
+
+    def create_stacked_bar_distributions(self):
+        import matplotlib.pyplot as plt
+
+        plt.figure(figsize=(10, 6))  # Adjust figure size as needed
+        df_percentage = self._get_percentages("loc")
+        df_percentage.plot(kind="bar", stacked=True, use_index=True)
+        plt.xlabel("Subcellular Location")
+        plt.ylabel("Percentages")
+        plt.title(f"Distribution of {self.drug_modality_key} Across Subcellular Locations")
+        plt.xticks(rotation=45, ha="right")  # Rotate x-axis labels for readability
+        plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
+        plt.tight_layout()
+        plt.savefig(os.path.join(self.out_dir, "stacked_bar_distributions.pdf"), format="pdf", bbox_inches="tight")
+        plt.show()
+
+    def _get_percentages(self, location_or_modality="loc"):
+        if location_or_modality == "loc": ##percentages by row
+            return self.contingency_table.T.apply(lambda x: x * 100 / x.sum()).T
+        return self.contingency_table.apply(lambda x: x * 100 / x.sum()) ##precentage by column

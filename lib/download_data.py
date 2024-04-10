@@ -18,14 +18,11 @@ class DownloadPrepareInitialData:
         self.targets_combined = targets_output if targets_output is not None else tempfile.mktemp(dir=self.temp_dir, suffix="targets_combined.json")
         self.molecules_combined = molecules_output if molecules_output is not None else tempfile.mktemp(dir=self.temp_dir, suffix="molecules_combined.json")
 
-    def process(self, download=True):
-        if download:
-            print(f"Downloading targets to {os.path.join(self.temp_dir, 'targets')}")
-            self.download_data("targets")
-            print(f"Downloading mechanismOfAction to {os.path.join(self.temp_dir, 'mechanismOfAction')}")
-            self.download_data("mechanismOfAction")
-            print(f"Downloading molecule to {os.path.join(self.temp_dir, 'molecule')}")
-            self.download_data("molecule")
+        self.download = not all([mechanism_of_action_output, targets_output, molecules_output])
+
+    def process(self):
+        if self.download:
+            self.download_all()
 
         self.join_json_files(os.path.join(self.temp_dir, "targets"), self.targets_combined)
         self.join_json_files(os.path.join(self.temp_dir, "mechanismOfAction"), self.moa_combined)
@@ -59,4 +56,15 @@ class DownloadPrepareInitialData:
                 with open(os.path.join(input_folder, file), "r") as in_fh:
                     out_fh.write("\n".join([line.strip() for line in in_fh]))
                     out_fh.write("\n")
+
+    def download_all(self):
+        print(f"Downloading targets to {os.path.join(self.temp_dir, 'targets')}")
+        self.download_data("targets")
+        print(f"Downloading mechanismOfAction to {os.path.join(self.temp_dir, 'mechanismOfAction')}")
+        self.download_data("mechanismOfAction")
+        print(f"Downloading molecule to {os.path.join(self.temp_dir, 'molecule')}")
+        self.download_data("molecule")
+
+    def get_combined_files(self):
+        return self.targets_combined, self.moa_combined, self.molecules_combined
 

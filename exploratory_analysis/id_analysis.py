@@ -85,7 +85,7 @@ def chembl_id_analysis():
         #cat preprocessed_moa.tsv | cut -f 2 | head -n -1 | sort | uniq -u > moa_chembl_ids.txt
         moa_chembl_ids.update([chembl_id.replace("\n", "") for chembl_id in fh])
 
-    with open("/home/berk/Projects/OpenTargets/preprocessed_molecules.tsv", "r") as fh:
+    with open("/exploratory_analysis/preprocessed_molecules.tsv", "r") as fh:
         for line in fh:
             line = line.split("\t")
             molecules_chembl_ids.add(line[0])
