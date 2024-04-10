@@ -1,13 +1,19 @@
 This project is to know how drug modalities distributed among subcellular locations using OpenTargets datasets (molecules, Targets, mechanism of action).
 
 Set a virtual environment
+
 ```python3 -m venv  .venv```
+
 Activate
+
 ```source .venv/bin/activate```
+
 Install requirements
+
 ```pip install -r requirements.txt```
 
 Run the script
+
 ```python3 main.py --out_dir /path/to/output/directory```
 
 By default, the script downloads the data from OpenTargets API, combines data to "all_combined_data.tsv" and generates significance report in "drugType" and "subcellular_location_label".
